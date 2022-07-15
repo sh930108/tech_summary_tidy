@@ -1,0 +1,1 @@
+g++ -shared -fPIC cIdentify.c -L. -lIdentify -Wl,-rpath=./ -o libcIdentify.so

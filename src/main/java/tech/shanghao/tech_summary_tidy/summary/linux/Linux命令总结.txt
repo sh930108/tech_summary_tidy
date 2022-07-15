@@ -1,0 +1,374 @@
+
+linux 操作手册
+
+http://www.runoob.com/linux/linux-command-manual.html
+
+安装
+## 安装上传下载的命令 -y：一直同意
+	yum -y install lrzsz
+
+	压缩当前文件夹的文件：
+	zip -q -r cmc.zip *
+
+	解压activeMq
+	tar -zxcf apache-activemq-5.14.0-bin.tar.gz
+	解压并安装Java
+	tar -zxvf jdk-8u191-linux-x64.tar.gz
+
+##  修改环境变量
+	### sudo命令以系统管理者的身份执行指令，也就是说，经由 sudo 所执行的指令就好像是 root 亲自执行。http://www.runoob.com/linux/linux-comm-sudo.html
+	sudo vi /etc/profile  以管理员角色来打开profile文件
+			#Java Env Java环境变量Linux配置
+			export JAVA_HOME=/usr/local/src/jdk1.8.0_191
+			export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+			export PATH=$PATH:$JAVA_HOME/bin
+			export JRE_HOME=$JAVA_HOME/jre
+	source /etc/profile   生效配置文件
+
+	# 如果安装的程序访问不了，需要给对应的端口开防火墙
+	/sbin/iptables -I INPUT -p tcp --dport 1883 -j ACCEPT
+	/sbin/iptables -I INPUT -p tcp --dport 61616 -j ACCEPT
+	/sbin/iptables -I INPUT -p tcp --dport 8161 -j ACCEPT
+	##重启防火墙
+	/etc/rc.d/init.d/iptables save
+	/etc/rc.d/init.d/iptables restart
+	/etc/init.d/iptables status
+
+## 查看端口占用
+	netstat -anp|grep 61616
+	lsof -i:61616
+
+	// 查看8356有效连接数
+	netstat -anp | grep 7002 |grep ESTABLISHED| wc -l
+
+	netstat -ant | awk '/tcp/ {print $6}'|sort |uniq -c |sort -nr
+
+## 设置hostname
+    sudo hostnamectl set-hostname rabbitmqnode1
+
+## ps将某个进程显示出来 显示java的进程
+	ps -ef |grep java			//显示所有命令，连带命令行
+	ps -aux |grep java       	//-aux 显示所有包含其他使用者的行程
+
+## 查看ac开头程序的状态
+	systemctl status test.@bic.notify*
+	systemctl status test.ac*
+	systemctl restart test.ac*   重启服务
+	systemctl restart wrapper   重启服务
+	## 服务重新加载
+    systemctl daemon-reload
+    ## 重置失败的服务，添加具体服务则重载具体的服务，如果没有则重载所有
+    systemctl reset-failed
+    systemctl reset-failed  service*
+
+## 系统服务配置
+https://blog.csdn.net/u010255859/article/details/74432548
+
+## 显示系统内核
+    uname -r
+
+##显示文件夹大小 sort是排序
+	du -h|sort -nr
+	ls -lh  文件大小按kb、M来展示   -l 详细显示 -h  --human-readable 自适应显示单位
+	使用“-h”参数时，会根据文件的大小选择显示的单位是“K”、“M”还是“G”。如果希望指定显示的单位，可以使用“--block-size”参数，如下：
+	ls -l --block-size=k
+	ls -l --block-size=M
+	ll 显示文件大小展示
+
+## 给文件赋权限
+chmod 777 -R *
+
+##查看服务状态
+	systemctl status test.@bic.notify.1|grep active| head -n1 | awk {'print $3'} | cut -d '(' -f2 | cut -d ')' -f1
+
+##ssh root 连接不上的情况：
+	sudo vi /etc/ssh/sshd_config 修改 PermitRootLogin 改成yes
+	重启 sshd 服务 sudo /bin/systemctl restart sshd.service
+
+	linux 为了保护核心文件root没有开启 通过下面方式设置
+	sudo passwd root 回车
+	(输入密码,但不会在屏幕显示出*)
+	(再输入一次密码)
+	然后 root 登陆
+
+## Linux本机localhost
+	vim /etc/hosts
+
+	df -hl /opt/
+## 查看磁盘空间使用情况
+
+## 查看文件夹大小
+	du -sh * | sort -n
+
+## java运行jar
+	java -jar demo.jar --server.port=9090
+	java -jar demo.jar --server.port=7002 >> /opt/testmqtt.log 2>&1
+	"D:\test\web\testCenter\bin\notify\..\..\bin\jre\bin\java.exe" -jar portMock.jar
+
+### 1. 启动java进程
+JAVA_OPTS="-Xms128m -Xmx400m -Xss512k -XX:MetaspaceSize=100m -XX:MaxMetaspaceSize=256m -XX:NewSize=100m -XX:MaxNewSize=400m -XX:SurvivorRatio=8"
+JAVA_OPTS="$JAVA_OPTS -XX:ParallelGCThreads=4 -XX:MaxTenuringThreshold=9 -XX:+DisableExplicitGC -XX:+ScavengeBeforeFullGC -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+ExplicitGCInvokesConcurrent -XX:+HeapDumpOnOutOfMemoryError -XX:-OmitStackTraceInFastThrow -Duser.timezone=Asia/Shanghai -Dclient.encoding.override=UTF-8 -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom"
+## 将conf/添加classpath,jar中会扫描classpath获取config.properties,comPath 用于日志打印
+JAVA_OPTS="$JAVA_OPTS -Xbootclasspath/a:${COM_DIR}/conf/ -Dcom.dir=${COM_DIR}"
+cd ${COM_DIR}/bin/rabbitmq-auth/
+nohup ${JAVA} ${JAVA_OPTS} -jar rabbitmq-auth-2.0.1.RELEASE.jar >> ${COM_DIR}/logs/rabbitmq-auth/rabbitmq-auth-start.log 2>&1 &
+
+
+## Linux 搜索文件命令
+	在home目录下面搜索 名字为elm.cc的文件
+	find /home/ -name elm.cc
+
+## 设置idea JVM运行参数（内存溢出时打出dump）
+	-Xms50m  -Xmx50m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=E:dump\hello.hprof
+
+## tomcat 添加远程调试参数
+	declare -x CATALINA_OPTS="-server -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"
+	JVM 添加远程调试参数（下面一行是不需要用户名密码验证）
+	-Dcom.sun.management.jmxremote.port=8989 -Djava.rmi.server.hostname=10.19.128.118
+	-Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false
+
+    ## 运行参数
+    java -server -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000 -jar iam.jar  &
+
+## Linux 修改时间
+	date -s  完整日期时间（YYYY-MM-DD hh:mm[:ss]）：修改日期、时间
+
+## Linux删除文件夹( r 递归 f 强制删除)
+	rm -rf /var/log/httpd/access
+
+## Linux复制文件
+	复制文件夹 （r 表示递归 f 表示不提示）
+	cp -rf $HOME_DIR/tools/jre18linux64.1 /opt/jre18linux64.1
+	拷贝文件（拷到对应的目录下面去）
+	cp -rf  /opt/tool/文档/高可用部署cluster步骤.docx  /opt
+	如果文件存在仍会提示
+	\cp -rf  /opt/tool/文档/高可用部署cluster步骤.docx  /opt
+
+## watch
+watch -n 1 -d 'ls -l'
+-n 指定时间间隔
+-d | --differences 高亮显示差异部分
+
+amq Linux环境环境安装失败：
+
+原因：
+	由于Linux下 通过java -cp 执行多个jar的时候路径分隔符使用了“;”(由于Windows下使用“;”分割，所以很容易被误导)
+	Linux下多个jar路径应该通过“:”进行分割
+
+错误事例：
+	$JAVA "-DAMQ_COMPATH=$HOME" -DVERSION=activemq514linux64 -cp "$HOME/tool/lib/*;$HOME/tool/lib/lib/*" "$CLSNAME"
+
+正确命令：
+	$JAVA "-DAMQ_COMPATH=$HOME" -DVERSION=activemq514linux64 -cp "$HOME/tool/lib/*:$HOME/tool/lib/lib/*" "$CLSNAME"
+
+## 检查防火墙是否安装
+	#!/bin/bash -qa|grep iptables
+
+	systemctl stop firewalld.service
+
+	配置命令：
+	firewall-cmd --permanent --add-port=8161/tcp
+	firewall-cmd --reload
+
+	查看配置结果命令，看结果中的ports是否有添加的端口：
+	firewall-cmd --list-all
+
+
+	去掉命令：?
+	firewall-cmd --permanent --remove-port=8162/tcp
+	firewall-cmd --reload?
+
+## 强制杀死进程 （9538 进程号）
+	kill -s 9 9538
+
+## 查看进程所占内存
+	top -p 2913
+	## 查看进程中具体 CPU消耗
+	top -p 2913 H
+
+git的时候出现问题SSL Error: unable to get local issuer certificate
+跳过ssh验证
+git config --global http.sslVerify false
+
+linux 下操作dump文件
+
+1. dump (heap dump , thread dump)
+	./jcmd pid GC.heap_dump >/opt/test/web/testCenter/logs/test_notify/notify.hprof
+	./jcmd pid Thread.print
+
+	dump
+	./jcmd 61990 GC.heap_dump /opt/test/web/components/activemq514linux64.1/amq.hprof
+
+windump
+jcmd pid Thread.print
+jcmd pid GC.heap_dump D:\notify.hprof
+
+psexec -s "D:\D:\Program Files\test\web\components\jre18win64.1\bin\jcmd.exe" 34844 Thread.print >D:/aa.txt
+
+/usr/lib/systemd/system
+
+ExecStart=/opt/test/web/testCenter/bin/notify/activemq514win64/bin/linux-x86-64/activemq start
+ExecStop=/opt/test/web/testCenter/bin/notify/activemq514win64/bin/linux-x86-64/activemq stop
+
+### tcp 抓包
+https://www.cnblogs.com/monogem/p/9802756.html
+##### lo本地网卡
+tcpdump -i lo -nn tcp port 7002|grep "> 10.2.145.79.7002"|awk -F " " '{print $3}'|awk -F "." '{cmd="lsof -i :"$5;system(cmd)}'
+##### 抓包对应端口
+tcpdump -i any port 8257 -w /home/port8257-0904.pcap
+tcpdump -i any port 8090 -w /opt/port8090.pcap
+
+##### 抓包对应网卡
+tcpdump -i enp61s0f2 host 192.168.1.123 and port 80 -w /opt/xxx.cap
+tcpdump -nn -i enp61s0f2 -s 0 port 7018 -w /opt/1.pcap
+
+抓包本地网卡指令
+1.在服务器执行如下指令代码：
+tcpdump -i lo -w /opt/hello.cap
+2.执行要抓包的操作：例如请求增加ldap数据
+3.ctrl+C停止运行的指令，下载/opt/fjkd.cap至本地
+4.通过wireshark打开cap文件，过滤指定信息如ldap
+
+wireshark 过滤条件：
+http.request.uri contains "login"
+tcp.port == 8090
+
+
+
+2. 看看监控页面是否可以访问,保存当时的kahadb,localhost(临时存储)
+3. 保存当时日志
+
+
+SSL证书命令
+
+	#根据keystore为证书
+	keytool -export -alias 1 -keystore activemq514win64_server.jks -file amq_server.crt
+	keytool -export -alias 1 -keystore root.jks -file root.crt
+	# 根据根证书导出ts
+	keytool -import -file amq_server.crt -keystore client_root.ts -alias 1
+	keytool -import -file root.crt -keystore client_root.ts -alias 1
+
+	keytool -import -v -trustcacerts -alias root111  -file ./root.crt -storepass changeit -keystore ./cacerts
+	keytool -import -v -trustcacerts -alias root111  -file ./root.crt -storepass changeit -keystore ./cacerts
+	"C:\Program Files\Java\jdk1.8.0_191\bin\keytool" -import -v -trustcacerts -alias root1111  -file ./root.crt -storepass changeit -keystore ./cacerts
+	"C:\Program Files\Java\jdk1.8.0_191\bin\keytool" -import -v -trustcacerts -alias root154  -file ./@bic_notify_server.crt -storepass changeit -keystore ./cacerts
+
+	### jmeter证书导入 root.crt 导入
+	keytool -import -v -trustcacerts -alias root127  -file ./root.crt -storepass changeit -keystore ./cacerts
+	### cacerts 拷到 jre1.8.0_191\lib\security
+
+
+## 查看服务器网络情况
+	测试网络情况，使用iperf3
+
+	yum install iperf3
+
+	https://iperf.fr/
+
+	iperf3 –s
+
+	iperf3 -c 10.66.164.35
+
+
+## 查看服务历史情况
+	journalctl -xe
+	journalctl -u test.@bic.notify.1
+	journalctl -u test.@bic.notify.1 --since="2020-01-01 00:00:00"
+
+## ipv6相关
+## 禁用ipv6的两种方法	
+	1 通过系统配置文件/etc/sysctl.conf
+		# 禁用整个系统所有接口的IPv6
+		net.ipv6.conf.all.disable_ipv6 = 1
+		# 禁用某一个指定接口的IPv6(例如：eth0, lo)
+		net.ipv6.conf.lo.disable_ipv6 = 1
+		net.ipv6.conf.eth0.disable_ipv6 = 1
+		在 /etc/sysctl.conf 使这些更改生效，运行以下命令：
+		## sysctl -p 
+		$ sudo sysctl -p /etc/sysctl.conf
+	2 通过内核启动时，传递内核参数
+		用文本编辑器打开 /etc/default/grub 并给GRUBCMDLINELINUX变量添加"ipv6.disable=1"。
+		$ sudo vi /etc/default/grup
+		GRUB_CMDLINE_LINUX="xxxxx ipv6.disable=1"	
+##  查看内核是否支持ipv6
+		sysctl -a | grep ipv6 | grep disable		
+		
+## 开启内核参数支持ipv6
+		##执行上述步骤之后，运行如下命令使内核开启ipv6
+		sysctl -w net.ipv6.conf.all.disable_ipv6=0
+		##再次检查内核是否已全部支持IPv6：
+		sysctl -a | grep ipv6 | grep disable
+		若参数全部为0，则说明ipv6已经全部支持
+		
+参考：https://www.jianshu.com/p/523a8df3f935
+		
+systemctl daemon-reload
+systemctl restart [servicename]
+
+curl -u admin:vfD25S7A -d "body=message" http://10.19.131.13:8288/api/message/ShanghaoTEST?type=queue
+
+
+kafka常用指令
+
+bin/zookeeper-server-start.sh config/zookeeper.properties
+JMX_PORT=7899 bin/kafka-server-start.sh config/server.properties
+
+./kafka-consumer-groups.sh --bootstrap-server localhost:9093 --list
+./kafka-consumer-groups.sh --bootstrap-server localhost:9093 --describe --group group-2
+./kafka-console-producer.sh --bootstrap-server localhost:9093 --describe --group group-2
+
+kafka 监控 KafkaOffsetMonitor
+/opt/jre18linux64.1/bin/java -cp KafkaOffsetMonitor-assembly-0.2.0.jar com.quantifind.kafka.offsetapp.OffsetGetterWeb --zk 10.19.128.118:2181 --port 9099  --refresh 5.seconds --retain 1.days
+jar打开，offsetapp 下index.html 替换
+
+    <script src="//cdn.static.runoob.com/libs/angular.js/1.4.6/angular.min.js"></script>
+	<script src="//cdn.static.runoob.com/libs/angular.js/1.4.6/angular-route.js"></script>
+	<script src="//cdn.static.runoob.com/libs/angular.js/1.4.6/angular-resource.js"></script>
+
+
+查看tcmalloc 是否被使用：
+cat /proc/10468/maps | awk '{print $6}' | grep '\.so' | sort | uniq
+
+
+修改win注册表：
+sc config [ServiceName]
+sc config test.tomcat85win64.javaweb.1 binPath= "C:\Program Files (x86)\web\components\tomcat85win64.1\bin\tomcat8.exe //RS//test.tomcat85win64.javaweb.1" DisplayName= test.tomcat85win64.javaweb.1 start= demand depend= Tcpip/Afdw
+
+sudo iptables -A OUTPUT -p tcp --dport 7018 -j DROP
+
+
+## token验证失败，需要添加注册表
+运行       regedit.exe
+linux：    /etc/sfrzcfg
+windows：  HKEY_LOCAL_MACHINE\SOFTWARE\Client\YH  导出，修改和服务器一致，并运行
+
+###### yum
+yum仓库
+yum repolist
+
+## yum 会把下载的软件包和header存储在cache中而不自动删除。如果觉得占用磁盘空间，可以使用yum clean指令清除缓存。
+yum clean all
+## 这个命令是将软件包信息提前在本地缓存一份，用来提高搜索安装软件的速度
+yum makecache
+
+yum install net-snmp
+## openssl依赖
+yum install openssl
+
+## maven assembly插件打包命名
+mvn package assembly:single 
+
+## yum 下载对应包
+#### --downloaddir=./ 当前目录 httpd依赖
+yum install yum-plugin-downloadonly
+yum -y install yum-download
+yum install --downloadonly --downloaddir=./ httpd
+
+## 卸载一个软件时 yum -y remove
+yum -y remove httpd
+
+## 查看操作系统详情
+cat /etc/os-release
+cat /proc/version
+## 查看x86还是arrch64
+uname -p
